@@ -22,3 +22,8 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+.env.local
+CLOUDFLARE_API_TOKEN
+.env.cloudflare
+.env.local
