@@ -1,0 +1,66 @@
+---
+import '../styles/global.css'
+
+interface Props {
+  title?: string;
+}
+
+const { title = 'Tick Dashboard' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Regen Project Board — see what's being built" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <nav class="sticky top-0 z-50 backdrop-blur-md" style="background: oklch(from var(--bg) l c h / 80%);">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="flex h-14 items-center justify-between">
+          <a href="/" class="flex items-center gap-2 text-lg font-semibold" style="color: var(--fg);">
+            <span>🍄</span>
+            <span>Tick Dashboard</span>
+          </a>
+          <div class="flex items-center gap-3">
+            <button id="theme-toggle" class="badge cursor-pointer" style="background: var(--border); color: var(--fg-muted);">
+              Theme
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+      <slot />
+    </main>
+
+    <footer class="mt-auto py-6 text-center text-sm" style="color: var(--fg-muted);">
+      <p>Powered by tick-md 🍄 Regen Project Board</p>
+    </footer>
+
+    <script is:inline>
+      // Theme cycling: regen (default) → dark → light → regen
+      const themes = ['regen', 'dark', 'light'];
+      let current = localStorage.getItem('theme') || 'regen';
+      
+      function applyTheme(theme) {
+        document.documentElement.className = theme === 'regen' ? '' : theme;
+        localStorage.setItem('theme', theme);
+        current = theme;
+        const btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
+      }
+      
+      applyTheme(current);
+      
+      document.getElementById('theme-toggle')?.addEventListener('click', () => {
+        const next = themes[(themes.indexOf(current) + 1) % themes.length];
+        applyTheme(next);
+      });
+    </script>
+  </body>
+</html>

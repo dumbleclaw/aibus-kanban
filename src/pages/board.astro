@@ -1,0 +1,8 @@
+---
+import Base from '../layouts/Base.astro';
+import BoardPage from '../components/BoardPage';
+---
+
+<Base title="Project Board — Tick Dashboard">
+  <BoardPage client:only="react" />
+</Base>

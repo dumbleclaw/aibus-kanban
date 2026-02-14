@@ -1,0 +1,117 @@
+@import 'tailwindcss';
+
+/* === Regen Theme (default) === */
+:root {
+  --bg: oklch(0.16 0.02 160);
+  --bg-card: oklch(0.19 0.015 160);
+  --bg-card-hover: oklch(0.22 0.018 160);
+  --fg: oklch(0.92 0.03 160);
+  --fg-muted: oklch(0.65 0.02 160);
+  --primary: oklch(0.70 0.18 155);
+  --primary-fg: oklch(0.16 0.02 160);
+  --secondary: oklch(0.45 0.08 280);
+  --accent: oklch(0.85 0.10 85);
+  --accent-fg: oklch(0.20 0.02 85);
+  --border: oklch(1 0 0 / 8%);
+  --border-strong: oklch(1 0 0 / 15%);
+  --glow: oklch(0.70 0.18 155 / 20%);
+
+  /* status colors */
+  --status-backlog: oklch(0.55 0.01 260);
+  --status-todo: oklch(0.65 0.15 240);
+  --status-in-progress: oklch(0.78 0.14 85);
+  --status-review: oklch(0.60 0.15 300);
+  --status-done: oklch(0.70 0.18 155);
+
+  /* priority colors */
+  --priority-high: oklch(0.65 0.22 25);
+  --priority-medium: oklch(0.78 0.14 85);
+  --priority-low: oklch(0.65 0.02 160);
+}
+
+/* === Light Theme === */
+.light {
+  --bg: oklch(0.99 0.005 78.3);
+  --bg-card: oklch(1 0 0);
+  --bg-card-hover: oklch(0.97 0.005 78);
+  --fg: oklch(0.31 0.024 314.5);
+  --fg-muted: oklch(0.55 0.015 285);
+  --primary: oklch(0.61 0.246 20.9);
+  --primary-fg: oklch(0.99 0.005 78.3);
+  --secondary: oklch(0.47 0.052 284.2);
+  --accent: oklch(0.90 0.06 189.7);
+  --accent-fg: oklch(0.31 0.024 314.5);
+  --border: oklch(0 0 0 / 10%);
+  --border-strong: oklch(0 0 0 / 20%);
+  --glow: oklch(0.61 0.246 20.9 / 15%);
+}
+
+/* === Dark Theme === */
+.dark {
+  --bg: oklch(0.141 0.005 285.8);
+  --bg-card: oklch(0.21 0.006 285.9);
+  --bg-card-hover: oklch(0.25 0.007 286);
+  --fg: oklch(0.985 0 0);
+  --fg-muted: oklch(0.705 0.015 286);
+  --primary: oklch(0.92 0.004 286.3);
+  --primary-fg: oklch(0.21 0.006 285.9);
+  --secondary: oklch(0.274 0.006 286);
+  --accent: oklch(0.274 0.006 286);
+  --accent-fg: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --border-strong: oklch(1 0 0 / 20%);
+  --glow: oklch(0.92 0.004 286.3 / 15%);
+}
+
+/* === Base Styles === */
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+* {
+  border-color: var(--border);
+}
+
+/* === Utility Classes === */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+  box-shadow: 0 0 20px var(--glow);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.status-badge-backlog { background: oklch(0.55 0.01 260 / 20%); color: var(--status-backlog); }
+.status-badge-todo { background: oklch(0.65 0.15 240 / 20%); color: var(--status-todo); }
+.status-badge-in_progress { background: oklch(0.78 0.14 85 / 20%); color: var(--status-in-progress); }
+.status-badge-review { background: oklch(0.60 0.15 300 / 20%); color: var(--status-review); }
+.status-badge-done { background: oklch(0.70 0.18 155 / 20%); color: var(--status-done); }
+
+.priority-high { color: var(--priority-high); }
+.priority-medium { color: var(--priority-medium); }
+.priority-low { color: var(--priority-low); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--fg-muted); }

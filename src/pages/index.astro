@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import ProjectList from '../components/ProjectList';
+---
+
+<Base title="Regen Project Board">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold mb-2" style="color: var(--fg);">
+      🍄 Regen Project Board
+    </h1>
+    <p style="color: var(--fg-muted);">
+      See what the mycelium is building. Real-time task state from our agents.
+    </p>
+  </div>
+
+  <ProjectList client:load />
+</Base>

@@ -1,0 +1,33 @@
+---
+interface Props {
+  slug: string;
+  name: string;
+  taskCount: number;
+  lastSyncedAt: number;
+}
+
+const { slug, name, taskCount, lastSyncedAt } = Astro.props;
+const syncDate = new Date(lastSyncedAt).toLocaleDateString('en-US', {
+  month: 'short',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+---
+
+<a href={`/board?project=${slug}`} class="card block p-5 group">
+  <div class="flex items-start justify-between mb-3">
+    <h3 class="text-lg font-semibold" style="color: var(--fg);">{name}</h3>
+    <span class="text-xl">🍄</span>
+  </div>
+  
+  <div class="flex items-center gap-4 text-sm" style="color: var(--fg-muted);">
+    <span>{taskCount} tasks</span>
+    <span>·</span>
+    <span>Synced {syncDate}</span>
+  </div>
+
+  <div class="mt-3 text-xs font-medium" style="color: var(--primary); opacity: 0;">
+    <span class="group-hover:opacity-100 transition-opacity">View board →</span>
+  </div>
+</a>
