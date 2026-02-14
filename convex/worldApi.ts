@@ -59,7 +59,7 @@ export const postIdea = httpAction(async (ctx, request) => {
 // POST /api/clawarts/spell
 export const postSpell = httpAction(async (ctx, request) => {
   const body = await request.json();
-  const { roundId, word, caster, cost } = body;
+  const { roundId, word, caster, cost, casterType } = body;
   if (!roundId || !word || !caster) {
     return new Response(JSON.stringify({ error: "Missing required fields: roundId, word, caster" }), {
       status: 400,
@@ -71,6 +71,7 @@ export const postSpell = httpAction(async (ctx, request) => {
     word,
     caster,
     cost: cost ?? 1,
+    casterType,
   });
   return new Response(JSON.stringify({ ok: true, spellId }), {
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
@@ -194,6 +195,44 @@ export const postSetPhase = httpAction(async (ctx, request) => {
   }
   await ctx.runMutation(api.world.setPhase, { phase });
   return new Response(JSON.stringify({ ok: true }), {
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+  });
+});
+
+// POST /api/clawarts/fund
+export const postFund = httpAction(async (ctx, request) => {
+  const body = await request.json();
+  const { roundId, ideaId, funder, amount, direction } = body;
+  if (!roundId || !ideaId || !funder || !amount || !direction) {
+    return new Response(JSON.stringify({ error: "Missing required fields: roundId, ideaId, funder, amount, direction" }), {
+      status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+  const result = await ctx.runMutation(api.world.fundIdea, { roundId, ideaId, funder, amount, direction });
+  return new Response(JSON.stringify(result), {
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+  });
+});
+
+// POST /api/clawarts/settle
+export const postSettle = httpAction(async (ctx, request) => {
+  const body = await request.json();
+  const { roundId } = body;
+  if (!roundId) {
+    return new Response(JSON.stringify({ error: "Missing roundId" }), {
+      status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+  const result = await ctx.runMutation(api.world.settle, { roundId });
+  return new Response(JSON.stringify(result), {
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+  });
+});
+
+// GET /api/clawarts/leaderboard
+export const getLeaderboard = httpAction(async (ctx) => {
+  const leaderboard = await ctx.runQuery(api.world.getLeaderboard);
+  return new Response(JSON.stringify({ leaderboard }), {
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });
 });

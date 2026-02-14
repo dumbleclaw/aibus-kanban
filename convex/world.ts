@@ -142,6 +142,8 @@ export const submitIdea = mutation({
       ...args,
       votes: 0,
       isWinner: false,
+      totalBelieved: 0,
+      totalChallenged: 0,
       createdAt: Date.now(),
     });
   },
@@ -153,14 +155,17 @@ export const castSpell = mutation({
     word: v.string(),
     caster: v.string(),
     cost: v.number(),
+    casterType: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const state = await ctx.db.query("worldState").first();
     if (!state) throw new Error("World not initialized");
 
+    const { casterType, ...rest } = args;
     const spellId = await ctx.db.insert("spells", {
-      ...args,
+      ...rest,
       word: args.word.toLowerCase(),
+      casterType,
       createdAt: Date.now(),
     });
 
@@ -330,6 +335,184 @@ export const completeRound = mutation({
         updatedAt: Date.now(),
       });
     }
+  },
+});
+
+// ─── GAMELOOP v2 ───
+
+export const fundIdea = mutation({
+  args: {
+    roundId: v.string(),
+    ideaId: v.id("ideas"),
+    funder: v.string(),
+    amount: v.number(),
+    direction: v.string(), // "believe" | "challenge"
+  },
+  handler: async (ctx, args) => {
+    // Insert funding record
+    await ctx.db.insert("funding", {
+      roundId: args.roundId,
+      ideaId: args.ideaId,
+      funder: args.funder,
+      amount: args.amount,
+      direction: args.direction,
+      createdAt: Date.now(),
+    });
+
+    // Update idea totals
+    const idea = await ctx.db.get(args.ideaId);
+    if (!idea) throw new Error("Idea not found");
+    if (args.direction === "believe") {
+      await ctx.db.patch(args.ideaId, { totalBelieved: (idea.totalBelieved ?? 0) + args.amount });
+    } else {
+      await ctx.db.patch(args.ideaId, { totalChallenged: (idea.totalChallenged ?? 0) + args.amount });
+    }
+
+    // Update participant
+    const participant = await ctx.db
+      .query("participants")
+      .withIndex("by_address", (q) => q.eq("address", args.funder))
+      .first();
+    if (participant) {
+      const patch: Record<string, unknown> = {
+        totalStaked: participant.totalStaked + args.amount,
+      };
+      if (args.direction === "challenge") {
+        patch.isContrarian = true;
+        patch.totalChallenged = (participant.totalChallenged ?? 0) + args.amount;
+      }
+      await ctx.db.patch(participant._id, patch);
+    }
+
+    // If challenge: burn stake to treasury
+    if (args.direction === "challenge") {
+      const state = await ctx.db.query("worldState").first();
+      if (state) {
+        await ctx.db.patch(state._id, {
+          treasuryDumble: state.treasuryDumble + args.amount,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+
+    return { ok: true };
+  },
+});
+
+export const settle = mutation({
+  args: { roundId: v.string() },
+  handler: async (ctx, args) => {
+    // Get winning idea
+    const winningIdea = await ctx.db
+      .query("ideas")
+      .withIndex("by_round_winner", (q) => q.eq("roundId", args.roundId).eq("isWinner", true))
+      .first();
+    if (!winningIdea) throw new Error("No winning idea found for round");
+
+    // Get all funding for the round
+    const allFunding = await ctx.db
+      .query("funding")
+      .withIndex("by_round", (q) => q.eq("roundId", args.roundId))
+      .collect();
+
+    const winnerFunding = allFunding.filter((f) => f.ideaId === winningIdea._id);
+    const loserFunding = allFunding.filter((f) => f.ideaId !== winningIdea._id);
+
+    // Losing believers' total stakes go to the pool
+    const losingBelieversPool = loserFunding
+      .filter((f) => f.direction === "believe")
+      .reduce((sum, f) => sum + f.amount, 0);
+
+    // Treasury fee: 10%
+    const treasuryFee = losingBelieversPool * 0.1;
+    const rewardPool = losingBelieversPool - treasuryFee;
+
+    // Believers of winner get proportional share
+    const winnerBelievers = winnerFunding.filter((f) => f.direction === "believe");
+    const totalWinnerBelieved = winnerBelievers.reduce((sum, f) => sum + f.amount, 0);
+
+    // Challengers who backed winner get bonus
+    const winnerChallengers = winnerFunding.filter((f) => f.direction === "challenge");
+    const challengerBonus = rewardPool * 0.1; // 10% of reward pool as challenger bonus
+    const believerRewardPool = rewardPool - challengerBonus;
+
+    // Distribute to winning believers
+    for (const fund of winnerBelievers) {
+      if (totalWinnerBelieved === 0) continue;
+      const share = (fund.amount / totalWinnerBelieved) * believerRewardPool;
+      const participant = await ctx.db
+        .query("participants")
+        .withIndex("by_address", (q) => q.eq("address", fund.funder))
+        .first();
+      if (participant) {
+        await ctx.db.patch(participant._id, {
+          totalWon: participant.totalWon + share,
+        });
+      }
+    }
+
+    // Distribute challenger bonus
+    const totalChallengerStake = winnerChallengers.reduce((sum, f) => sum + f.amount, 0);
+    for (const fund of winnerChallengers) {
+      if (totalChallengerStake === 0) continue;
+      const share = (fund.amount / totalChallengerStake) * challengerBonus;
+      const participant = await ctx.db
+        .query("participants")
+        .withIndex("by_address", (q) => q.eq("address", fund.funder))
+        .first();
+      if (participant) {
+        await ctx.db.patch(participant._id, {
+          totalWon: participant.totalWon + share,
+        });
+      }
+    }
+
+    // Update treasury
+    const state = await ctx.db.query("worldState").first();
+    if (state) {
+      await ctx.db.patch(state._id, {
+        treasuryDumble: state.treasuryDumble + treasuryFee,
+        updatedAt: Date.now(),
+      });
+    }
+
+    // Complete the round
+    const round = await ctx.db
+      .query("rounds")
+      .withIndex("by_roundId", (q) => q.eq("roundId", args.roundId))
+      .first();
+    if (round) {
+      await ctx.db.patch(round._id, { phase: "settled", endedAt: Date.now() });
+    }
+
+    return {
+      ok: true,
+      winningIdea: winningIdea.title,
+      losingBelieversPool,
+      treasuryFee,
+      rewardPool,
+      challengerBonus,
+    };
+  },
+});
+
+export const getLeaderboard = query({
+  args: {},
+  handler: async (ctx) => {
+    const participants = await ctx.db.query("participants").collect();
+    const sorted = participants
+      .sort((a, b) => b.totalWon - a.totalWon)
+      .slice(0, 50)
+      .map((p) => ({
+        address: p.address,
+        displayName: p.displayName,
+        totalWon: p.totalWon,
+        totalStaked: p.totalStaked,
+        totalChallenged: p.totalChallenged ?? 0,
+        isContrarian: p.isContrarian ?? false,
+        roundsParticipated: p.roundsParticipated,
+      }));
+    return sorted;
   },
 });
 

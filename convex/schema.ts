@@ -131,6 +131,9 @@ export const clawartsTables = {
     stakeCurrency: v.string(), // DUMBLE | MON
     votes: v.number(), // council votes received
     isWinner: v.boolean(),
+    category: v.optional(v.string()),
+    totalBelieved: v.optional(v.number()),
+    totalChallenged: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_round", ["roundId"])
@@ -142,6 +145,7 @@ export const clawartsTables = {
     word: v.string(), // the raw spell-word
     caster: v.string(), // address or agent name
     characterId: v.optional(v.id("characters")), // which character it summoned
+    casterType: v.optional(v.string()), // "external" | "subagent" | "challenger"
     cost: v.number(),
     createdAt: v.number(),
   })
@@ -168,9 +172,24 @@ export const clawartsTables = {
     roundsParticipated: v.number(),
     totalStaked: v.number(),
     totalWon: v.number(),
+    totalChallenged: v.optional(v.number()),
+    isContrarian: v.optional(v.boolean()),
     joinedAt: v.number(),
   })
     .index("by_address", ["address"]),
+
+  // Funding stakes per round
+  funding: defineTable({
+    roundId: v.string(),
+    ideaId: v.id("ideas"),
+    funder: v.string(),
+    amount: v.number(),
+    direction: v.string(), // "believe" | "challenge"
+    createdAt: v.number(),
+  })
+    .index("by_round", ["roundId"])
+    .index("by_idea", ["ideaId"])
+    .index("by_funder", ["funder"]),
 };
 
 export default defineSchema({

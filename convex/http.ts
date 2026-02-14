@@ -1,7 +1,7 @@
 import { httpRouter } from "convex/server";
 import { sync } from "./sync";
 import { listProjects, getTasks, handleCors } from "./publicApi";
-import { getWorld, getRound, getCharacters, getHistory, postIdea, postSpell, postJoin, postStartRound, postSummon, postUpdateCharacter, postVote, postDeclareWinner, postCompleteRound, postSetPhase, cors } from "./worldApi";
+import { getWorld, getRound, getCharacters, getHistory, postIdea, postSpell, postJoin, postStartRound, postSummon, postUpdateCharacter, postVote, postDeclareWinner, postCompleteRound, postSetPhase, postFund, postSettle, getLeaderboard, cors } from "./worldApi";
 
 const http = httpRouter();
 
@@ -29,9 +29,12 @@ http.route({ path: "/api/clawarts/vote", method: "POST", handler: postVote });
 http.route({ path: "/api/clawarts/declareWinner", method: "POST", handler: postDeclareWinner });
 http.route({ path: "/api/clawarts/completeRound", method: "POST", handler: postCompleteRound });
 http.route({ path: "/api/clawarts/setPhase", method: "POST", handler: postSetPhase });
+http.route({ path: "/api/clawarts/fund", method: "POST", handler: postFund });
+http.route({ path: "/api/clawarts/settle", method: "POST", handler: postSettle });
+http.route({ path: "/api/clawarts/leaderboard", method: "GET", handler: getLeaderboard });
 
 // CORS preflight for all Clawarts routes
-for (const path of ["/api/clawarts/world", "/api/clawarts/round", "/api/clawarts/characters", "/api/clawarts/history", "/api/clawarts/idea", "/api/clawarts/spell", "/api/clawarts/join", "/api/clawarts/startRound", "/api/clawarts/summon", "/api/clawarts/updateCharacter", "/api/clawarts/vote", "/api/clawarts/declareWinner", "/api/clawarts/completeRound", "/api/clawarts/setPhase"]) {
+for (const path of ["/api/clawarts/world", "/api/clawarts/round", "/api/clawarts/characters", "/api/clawarts/history", "/api/clawarts/idea", "/api/clawarts/spell", "/api/clawarts/join", "/api/clawarts/startRound", "/api/clawarts/summon", "/api/clawarts/updateCharacter", "/api/clawarts/vote", "/api/clawarts/declareWinner", "/api/clawarts/completeRound", "/api/clawarts/setPhase", "/api/clawarts/fund", "/api/clawarts/settle", "/api/clawarts/leaderboard"]) {
   http.route({ path, method: "OPTIONS", handler: cors });
 }
 
