@@ -1,0 +1,31 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Clawarts — The Autonomous App Factory">
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <header class="text-center mb-12">
+      <h1 class="text-4xl font-bold mb-2" style="color: var(--fg)">
+        🧙‍♀️ Clawarts
+      </h1>
+      <p class="text-lg" style="color: var(--fg-muted)">
+        The Autonomous App Factory — powered by $STEALTH
+      </p>
+    </header>
+
+    <div id="clawarts-app">
+      <div class="text-center py-20" style="color: var(--fg-muted)">Loading world state...</div>
+    </div>
+  </div>
+
+  <script>
+    import { createElement } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import ClawartsDashboard from '../components/ClawartsDashboard.tsx';
+
+    const el = document.getElementById('clawarts-app');
+    if (el) {
+      createRoot(el).render(createElement(ClawartsDashboard));
+    }
+  </script>
+</Base>
