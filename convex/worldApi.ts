@@ -187,13 +187,17 @@ export const postCompleteRound = httpAction(async (ctx, request) => {
 // POST /api/clawarts/setPhase
 export const postSetPhase = httpAction(async (ctx, request) => {
   const body = await request.json();
-  const { phase } = body;
+  const { phase, roundId } = body;
   if (!phase) {
     return new Response(JSON.stringify({ error: "Missing phase" }), {
       status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   }
-  await ctx.runMutation(api.world.setPhase, { phase });
+  if (roundId) {
+    await ctx.runMutation(api.world.setPhase, { roundId, phase });
+  } else {
+    await ctx.runMutation(api.world.setPhaseGlobal, { phase });
+  }
   return new Response(JSON.stringify({ ok: true }), {
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });
@@ -292,6 +296,63 @@ export const postProposeIdea = httpAction(async (ctx, request) => {
   const confirmedCount = ideas.filter((i: any) => i.txStatus === "confirmed").length;
   const readyToStart = confirmedCount >= 3;
   return new Response(JSON.stringify({ ok: true, ideaId: id, totalIdeas: ideas.length, confirmedCount, readyToStart }), {
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+  });
+});
+
+// POST /orchestrate — automated round management
+const ORCHESTRATE_KEY = "clawarts-orch-2026-xk7m";
+
+export const postOrchestrate = httpAction(async (ctx, request) => {
+  const body = await request.json();
+  if (body.key !== ORCHESTRATE_KEY) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+  
+  const state = await ctx.runQuery(api.world.getRoundState);
+  
+  // If action is open_round, do it
+  if (state.action === "open_round" && body.command === "open") {
+    const result = await ctx.runMutation(api.world.openRound, { roundId: state.nextRoundId });
+    return new Response(JSON.stringify({ ...state, ...result, opened: true }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+  
+  // If action is run_council and command is close
+  if (state.action === "run_council" && body.command === "close") {
+    await ctx.runMutation(api.world.setPhase, { roundId: state.roundId, phase: "council" });
+    return new Response(JSON.stringify({ ...state, phaseSwitched: "council" }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+  
+  // If command is complete — set winner and move to building
+  if (body.command === "complete" && body.roundId && body.winnerId) {
+    await ctx.runMutation(api.world.declareWinner, { roundId: body.roundId, ideaId: body.winnerId });
+    await ctx.runMutation(api.world.setPhase, { roundId: body.roundId, phase: "building" });
+    return new Response(JSON.stringify({ ok: true, winner: body.winnerId }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+  
+  // If command is finish — mark round complete, clear currentRound for next
+  if (body.command === "finish" && body.roundId) {
+    await ctx.runMutation(api.world.setPhase, { roundId: body.roundId, phase: "completed" });
+    const ws = await ctx.runQuery(api.world.getState);
+    if (ws?._id) {
+      await ctx.runMutation(api.world.patchWorldState, { id: ws._id, currentRound: "" });
+    }
+    return new Response(JSON.stringify({ ok: true, finished: body.roundId }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+  
+  // Default: return state
+  return new Response(JSON.stringify(state), {
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });
 });

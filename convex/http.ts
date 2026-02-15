@@ -1,7 +1,7 @@
 import { httpRouter } from "convex/server";
 import { sync } from "./sync";
 import { listProjects, getTasks, handleCors } from "./publicApi";
-import { getWorld, getRound, getCharacters, getHistory, postIdea, postSpell, postJoin, postStartRound, postSummon, postUpdateCharacter, postVote, postDeclareWinner, postCompleteRound, postSetPhase, postFund, postSettle, getLeaderboard, getActiveRound, getIdeas, postProposeIdea, postConfirmIdea, cors } from "./worldApi";
+import { getWorld, getRound, getCharacters, getHistory, postIdea, postSpell, postJoin, postStartRound, postSummon, postUpdateCharacter, postVote, postDeclareWinner, postCompleteRound, postSetPhase, postFund, postSettle, getLeaderboard, getActiveRound, getIdeas, postProposeIdea, postConfirmIdea, postOrchestrate, cors } from "./worldApi";
 
 const http = httpRouter();
 
@@ -42,6 +42,8 @@ http.route({ path: "/activeRound", method: "OPTIONS", handler: cors });
 http.route({ path: "/ideas", method: "OPTIONS", handler: cors });
 http.route({ path: "/proposeIdea", method: "OPTIONS", handler: cors });
 http.route({ path: "/confirmIdea", method: "OPTIONS", handler: cors });
+http.route({ path: "/orchestrate", method: "POST", handler: postOrchestrate });
+http.route({ path: "/orchestrate", method: "OPTIONS", handler: cors });
 
 // CORS preflight for all Clawarts routes
 for (const path of ["/api/clawarts/world", "/api/clawarts/round", "/api/clawarts/characters", "/api/clawarts/history", "/api/clawarts/idea", "/api/clawarts/spell", "/api/clawarts/join", "/api/clawarts/startRound", "/api/clawarts/summon", "/api/clawarts/updateCharacter", "/api/clawarts/vote", "/api/clawarts/declareWinner", "/api/clawarts/completeRound", "/api/clawarts/setPhase", "/api/clawarts/fund", "/api/clawarts/settle", "/api/clawarts/leaderboard"]) {

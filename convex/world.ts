@@ -122,7 +122,8 @@ export const initWorld = mutation({
   },
 });
 
-export const setPhase = mutation({
+// Legacy setPhase (world-only, no round update)
+export const setPhaseGlobal = mutation({
   args: { phase: v.string() },
   handler: async (ctx, args) => {
     const state = await ctx.db.query("worldState").first();
@@ -150,6 +151,106 @@ export const startRound = mutation({
       updatedAt: Date.now(),
     });
     return roundId;
+  },
+});
+
+// ─── Orchestration ───
+
+export const getRoundState = query({
+  args: {},
+  handler: async (ctx) => {
+    const state = await ctx.db.query("worldState").first();
+    if (!state) return { action: "none", error: "World not initialized" };
+    
+    const currentRoundId = state.currentRound;
+    if (!currentRoundId) {
+      // No active round — need to open one
+      const nextNum = (state.totalRounds || 0) + 1;
+      const nextRoundId = `ROUND-${String(nextNum).padStart(3, "0")}`;
+      return { action: "open_round", nextRoundId, totalRounds: state.totalRounds || 0, phase: state.phase };
+    }
+    
+    const round = await ctx.db.query("rounds").withIndex("by_roundId", q => q.eq("roundId", currentRoundId)).first();
+    if (!round) return { action: "open_round", nextRoundId: currentRoundId, totalRounds: state.totalRounds || 0, phase: state.phase };
+    
+    const ideas = await ctx.db.query("ideas").withIndex("by_round", q => q.eq("roundId", currentRoundId)).collect();
+    const spells = await ctx.db.query("spells").withIndex("by_round", q => q.eq("roundId", currentRoundId)).collect();
+    
+    const now = Date.now();
+    const elapsed = now - round.startedAt;
+    const ROUND_DURATION = 10 * 60 * 1000; // 10 minutes
+    const timeLeft = Math.max(0, ROUND_DURATION - elapsed);
+    const expired = timeLeft === 0;
+    
+    if (round.phase === "completed" || round.phase === "settled") {
+      const nextNum = (state.totalRounds || 0) + 1;
+      const nextRoundId = `ROUND-${String(nextNum).padStart(3, "0")}`;
+      return { action: "open_round", nextRoundId, totalRounds: state.totalRounds || 0, phase: round.phase };
+    }
+    
+    if (round.phase === "cauldron" && expired && ideas.length >= 1) {
+      return {
+        action: "run_council",
+        roundId: currentRoundId,
+        phase: round.phase,
+        ideas: ideas.map(i => ({ id: i._id, title: i.title, wallet: i.wallet, totalBelieved: i.totalBelieved, totalChallenged: i.totalChallenged })),
+        spells: spells.map(s => ({ word: s.word, caster: s.caster, casterType: s.casterType })),
+        timeLeft: 0,
+        expired: true,
+      };
+    }
+    
+    return {
+      action: "wait",
+      roundId: currentRoundId,
+      phase: round.phase,
+      ideaCount: ideas.length,
+      spellCount: spells.length,
+      timeLeft,
+      expired,
+      startedAt: round.startedAt,
+      endsAt: round.startedAt + ROUND_DURATION,
+    };
+  },
+});
+
+export const openRound = mutation({
+  args: { roundId: v.string() },
+  handler: async (ctx, args) => {
+    // Create round
+    await ctx.db.insert("rounds", {
+      roundId: args.roundId,
+      phase: "cauldron",
+      startedAt: Date.now(),
+    });
+    // Update world state
+    const state = await ctx.db.query("worldState").first();
+    if (state) {
+      await ctx.db.patch(state._id, {
+        currentRound: args.roundId,
+        phase: "cauldron",
+        totalRounds: (state.totalRounds || 0) + 1,
+        updatedAt: Date.now(),
+      });
+    }
+    return { ok: true, roundId: args.roundId };
+  },
+});
+
+export const patchWorldState = mutation({
+  args: { id: v.id("worldState"), currentRound: v.string() },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, { currentRound: args.currentRound, updatedAt: Date.now() });
+  },
+});
+
+export const setPhase = mutation({
+  args: { roundId: v.string(), phase: v.string() },
+  handler: async (ctx, args) => {
+    const round = await ctx.db.query("rounds").withIndex("by_roundId", q => q.eq("roundId", args.roundId)).first();
+    if (round) await ctx.db.patch(round._id, { phase: args.phase });
+    const state = await ctx.db.query("worldState").first();
+    if (state) await ctx.db.patch(state._id, { phase: args.phase, updatedAt: Date.now() });
   },
 });
 
