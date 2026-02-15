@@ -263,10 +263,10 @@ export const getIdeas = httpAction(async (ctx, request) => {
   });
 });
 
-// POST /proposeIdea
+// POST /proposeIdea — optimistic: saves as "pending", frontend confirms after tx
 export const postProposeIdea = httpAction(async (ctx, request) => {
   const body = await request.json();
-  const { roundId, title, author, url, wallet, source } = body;
+  const { roundId, title, author, url, wallet, source, txHash, txStatus } = body;
   if (!roundId || !title) {
     return new Response(JSON.stringify({ error: "Missing required fields: roundId, title" }), {
       status: 400,
@@ -282,15 +282,41 @@ export const postProposeIdea = httpAction(async (ctx, request) => {
     url: url ?? undefined,
     wallet: wallet ?? undefined,
     source: source ?? undefined,
+    txHash: txHash ?? undefined,
+    txStatus: txStatus ?? "pending",
     stakeAmount: 0,
     stakeCurrency: "STEALTH",
   });
-  // Count ideas for this round — notify if 3+
+  // Count confirmed ideas for this round
   const ideas = await ctx.runQuery(api.world.getIdeasByRound, { roundId });
-  const readyToStart = ideas.length >= 3;
-  return new Response(JSON.stringify({ ok: true, ideaId: id, totalIdeas: ideas.length, readyToStart }), {
+  const confirmedCount = ideas.filter((i: any) => i.txStatus === "confirmed").length;
+  const readyToStart = confirmedCount >= 3;
+  return new Response(JSON.stringify({ ok: true, ideaId: id, totalIdeas: ideas.length, confirmedCount, readyToStart }), {
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });
+});
+
+// POST /confirmIdea
+export const postConfirmIdea = httpAction(async (ctx, request) => {
+  const body = await request.json();
+  const { ideaId, txHash, txStatus } = body;
+  if (!ideaId || !txHash || !txStatus) {
+    return new Response(JSON.stringify({ error: "Missing required fields: ideaId, txHash, txStatus" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+  try {
+    const result = await ctx.runMutation(api.world.confirmIdea, { ideaId, txHash, txStatus });
+    return new Response(JSON.stringify(result), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e.message }), {
+      status: 400,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
 });
 
 // CORS preflight

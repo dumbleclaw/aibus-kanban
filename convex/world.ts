@@ -163,18 +163,46 @@ export const submitIdea = mutation({
     url: v.optional(v.string()),
     wallet: v.optional(v.string()),
     source: v.optional(v.string()),
+    txHash: v.optional(v.string()),
+    txStatus: v.optional(v.string()),
     stakeAmount: v.number(),
     stakeCurrency: v.string(),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("ideas", {
       ...args,
+      txStatus: args.txStatus ?? "pending",
       votes: 0,
       isWinner: false,
       totalBelieved: 0,
       totalChallenged: 0,
       createdAt: Date.now(),
     });
+  },
+});
+
+export const confirmIdea = mutation({
+  args: {
+    ideaId: v.id("ideas"),
+    txHash: v.string(),
+    txStatus: v.string(), // "submitted" | "confirmed" | "failed"
+  },
+  handler: async (ctx, args) => {
+    const idea = await ctx.db.get(args.ideaId);
+    if (!idea) throw new Error("Idea not found");
+    await ctx.db.patch(args.ideaId, {
+      txHash: args.txHash,
+      txStatus: args.txStatus,
+    });
+    return { ok: true };
+  },
+});
+
+export const deleteIdea = mutation({
+  args: { ideaId: v.id("ideas") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.ideaId);
+    return { ok: true };
   },
 });
 

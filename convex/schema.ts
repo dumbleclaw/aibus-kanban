@@ -131,6 +131,8 @@ export const clawartsTables = {
     url: v.optional(v.string()), // tweet/cast URL
     wallet: v.optional(v.string()), // proposer wallet address
     source: v.optional(v.string()), // "x" | "farcaster" | "text"
+    txHash: v.optional(v.string()),
+    txStatus: v.optional(v.string()), // "pending" | "submitted" | "confirmed" | "failed"
     stakeAmount: v.number(),
     stakeCurrency: v.string(), // DUMBLE | MON
     votes: v.number(), // council votes received
