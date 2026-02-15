@@ -66,6 +66,31 @@ export const getHistory = query({
   },
 });
 
+export const getActiveRound = query({
+  args: {},
+  handler: async (ctx) => {
+    // Find latest round that isn't completed
+    const rounds = await ctx.db.query("rounds").order("desc").take(10);
+    const active = rounds.find((r) => r.phase !== "completed" && r.phase !== "settled");
+    if (!active) return null;
+    const ideas = await ctx.db
+      .query("ideas")
+      .withIndex("by_round", (q) => q.eq("roundId", active.roundId))
+      .collect();
+    return { ...active, ideas };
+  },
+});
+
+export const getIdeasByRound = query({
+  args: { roundId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("ideas")
+      .withIndex("by_round", (q) => q.eq("roundId", args.roundId))
+      .collect();
+  },
+});
+
 export const getParticipant = query({
   args: { address: v.string() },
   handler: async (ctx, args) => {
@@ -134,6 +159,10 @@ export const submitIdea = mutation({
     title: v.string(),
     description: v.string(),
     submittedBy: v.string(),
+    author: v.optional(v.string()),
+    url: v.optional(v.string()),
+    wallet: v.optional(v.string()),
+    source: v.optional(v.string()),
     stakeAmount: v.number(),
     stakeCurrency: v.string(),
   },

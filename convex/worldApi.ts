@@ -237,6 +237,62 @@ export const getLeaderboard = httpAction(async (ctx) => {
   });
 });
 
+// ─── Root-level routes (called by Caldero frontend) ───
+
+// GET /activeRound
+export const getActiveRound = httpAction(async (ctx) => {
+  const round = await ctx.runQuery(api.world.getActiveRound);
+  return new Response(JSON.stringify(round ?? { active: false }), {
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+  });
+});
+
+// GET /ideas?roundId=ROUND-013
+export const getIdeas = httpAction(async (ctx, request) => {
+  const url = new URL(request.url);
+  const roundId = url.searchParams.get("roundId");
+  if (!roundId) {
+    return new Response(JSON.stringify({ error: "Missing roundId" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+  const ideas = await ctx.runQuery(api.world.getIdeasByRound, { roundId });
+  return new Response(JSON.stringify(ideas), {
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+  });
+});
+
+// POST /proposeIdea
+export const postProposeIdea = httpAction(async (ctx, request) => {
+  const body = await request.json();
+  const { roundId, title, author, url, wallet, source } = body;
+  if (!roundId || !title) {
+    return new Response(JSON.stringify({ error: "Missing required fields: roundId, title" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+  const id = await ctx.runMutation(api.world.submitIdea, {
+    roundId,
+    title,
+    description: title,
+    submittedBy: wallet || author || "anonymous",
+    author: author ?? undefined,
+    url: url ?? undefined,
+    wallet: wallet ?? undefined,
+    source: source ?? undefined,
+    stakeAmount: 0,
+    stakeCurrency: "STEALTH",
+  });
+  // Count ideas for this round — notify if 3+
+  const ideas = await ctx.runQuery(api.world.getIdeasByRound, { roundId });
+  const readyToStart = ideas.length >= 3;
+  return new Response(JSON.stringify({ ok: true, ideaId: id, totalIdeas: ideas.length, readyToStart }), {
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+  });
+});
+
 // CORS preflight
 export const cors = httpAction(async () => {
   return new Response(null, {

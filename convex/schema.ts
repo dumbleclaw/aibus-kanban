@@ -127,6 +127,10 @@ export const clawartsTables = {
     title: v.string(),
     description: v.string(),
     submittedBy: v.string(), // address or agent name
+    author: v.optional(v.string()), // display name from social
+    url: v.optional(v.string()), // tweet/cast URL
+    wallet: v.optional(v.string()), // proposer wallet address
+    source: v.optional(v.string()), // "x" | "farcaster" | "text"
     stakeAmount: v.number(),
     stakeCurrency: v.string(), // DUMBLE | MON
     votes: v.number(), // council votes received
