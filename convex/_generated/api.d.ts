@@ -8,14 +8,11 @@
  * @module
  */
 
-import type * as cleanup from "../cleanup.js";
 import type * as http from "../http.js";
 import type * as projects from "../projects.js";
 import type * as publicApi from "../publicApi.js";
 import type * as sync from "../sync.js";
 import type * as syncMutations from "../syncMutations.js";
-import type * as world from "../world.js";
-import type * as worldApi from "../worldApi.js";
 
 import type {
   ApiFromModules,
@@ -24,14 +21,11 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  cleanup: typeof cleanup;
   http: typeof http;
   projects: typeof projects;
   publicApi: typeof publicApi;
   sync: typeof sync;
   syncMutations: typeof syncMutations;
-  world: typeof world;
-  worldApi: typeof worldApi;
 }>;
 
 /**

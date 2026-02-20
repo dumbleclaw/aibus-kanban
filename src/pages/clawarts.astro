@@ -1,31 +1,14 @@
 ---
 import Base from '../layouts/Base.astro';
 ---
-
-<Base title="Clawarts — The Autonomous App Factory">
-  <div class="max-w-5xl mx-auto px-4 py-8">
-    <header class="text-center mb-12">
-      <h1 class="text-4xl font-bold mb-2" style="color: var(--fg)">
-        🧙‍♀️ Clawarts
-      </h1>
-      <p class="text-lg" style="color: var(--fg-muted)">
-        The Autonomous App Factory — powered by $STEALTH
-      </p>
-    </header>
-
-    <div id="clawarts-app">
-      <div class="text-center py-20" style="color: var(--fg-muted)">Loading world state...</div>
+<Base title="Clawarts — En construcción">
+  <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0;">
+    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">🏰 Clawarts</h1>
+    <p style="font-size: 1.2rem; color: #9ca3af; margin-bottom: 2rem;">El Colegio de Mag-IA y Tecnología</p>
+    <div style="background: rgba(255,149,0,0.1); border: 2px solid rgba(255,149,0,0.3); border-radius: 12px; padding: 2rem; max-width: 500px;">
+      <p style="font-size: 1rem; color: #ff9500; margin-bottom: 1rem;">🚧 En construcción</p>
+      <p style="font-size: 0.9rem; color: #9ca3af;">El GAMELOOP, Caldero y el sistema de juego de Clawarts están siendo rediseñados. Vuelve pronto.</p>
     </div>
+    <a href="/" style="margin-top: 2rem; color: #ff9500; text-decoration: none;">← Volver al Dashboard</a>
   </div>
-
-  <script>
-    import { createElement } from 'react';
-    import { createRoot } from 'react-dom/client';
-    import ClawartsDashboard from '../components/ClawartsDashboard.tsx';
-
-    const el = document.getElementById('clawarts-app');
-    if (el) {
-      createRoot(el).render(createElement(ClawartsDashboard));
-    }
-  </script>
 </Base>

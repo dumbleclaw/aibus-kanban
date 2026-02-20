@@ -1,53 +1,40 @@
 import { httpRouter } from "convex/server";
 import { sync } from "./sync";
 import { listProjects, getTasks, handleCors } from "./publicApi";
-import { getWorld, getRound, getCharacters, getHistory, postIdea, postSpell, postJoin, postStartRound, postSummon, postUpdateCharacter, postVote, postDeclareWinner, postCompleteRound, postSetPhase, postFund, postSettle, getLeaderboard, getActiveRound, getIdeas, postProposeIdea, postConfirmIdea, postOrchestrate, cors } from "./worldApi";
 
 const http = httpRouter();
 
-// ─── tick-coord routes ───
+// Write endpoint (auth required)
+http.route({
+  path: "/api/tick/sync",
+  method: "POST",
+  handler: sync,
+});
 
-http.route({ path: "/api/tick/sync", method: "POST", handler: sync });
-http.route({ path: "/api/tick/projects", method: "GET", handler: listProjects });
-http.route({ path: "/api/tick/tasks", method: "GET", handler: getTasks });
-http.route({ path: "/api/tick/projects", method: "OPTIONS", handler: handleCors });
-http.route({ path: "/api/tick/tasks", method: "OPTIONS", handler: handleCors });
+// Public read endpoints
+http.route({
+  path: "/api/tick/projects",
+  method: "GET",
+  handler: listProjects,
+});
 
-// ─── Clawarts World API ───
+http.route({
+  path: "/api/tick/tasks",
+  method: "GET",
+  handler: getTasks,
+});
 
-http.route({ path: "/api/clawarts/world", method: "GET", handler: getWorld });
-http.route({ path: "/api/clawarts/round", method: "GET", handler: getRound });
-http.route({ path: "/api/clawarts/characters", method: "GET", handler: getCharacters });
-http.route({ path: "/api/clawarts/history", method: "GET", handler: getHistory });
-http.route({ path: "/api/clawarts/idea", method: "POST", handler: postIdea });
-http.route({ path: "/api/clawarts/spell", method: "POST", handler: postSpell });
-http.route({ path: "/api/clawarts/join", method: "POST", handler: postJoin });
-http.route({ path: "/api/clawarts/startRound", method: "POST", handler: postStartRound });
-http.route({ path: "/api/clawarts/summon", method: "POST", handler: postSummon });
-http.route({ path: "/api/clawarts/updateCharacter", method: "POST", handler: postUpdateCharacter });
-http.route({ path: "/api/clawarts/vote", method: "POST", handler: postVote });
-http.route({ path: "/api/clawarts/declareWinner", method: "POST", handler: postDeclareWinner });
-http.route({ path: "/api/clawarts/completeRound", method: "POST", handler: postCompleteRound });
-http.route({ path: "/api/clawarts/setPhase", method: "POST", handler: postSetPhase });
-http.route({ path: "/api/clawarts/fund", method: "POST", handler: postFund });
-http.route({ path: "/api/clawarts/settle", method: "POST", handler: postSettle });
-http.route({ path: "/api/clawarts/leaderboard", method: "GET", handler: getLeaderboard });
+// CORS preflight
+http.route({
+  path: "/api/tick/projects",
+  method: "OPTIONS",
+  handler: handleCors,
+});
 
-// ─── Root-level routes (Caldero frontend) ───
-http.route({ path: "/activeRound", method: "GET", handler: getActiveRound });
-http.route({ path: "/ideas", method: "GET", handler: getIdeas });
-http.route({ path: "/proposeIdea", method: "POST", handler: postProposeIdea });
-http.route({ path: "/confirmIdea", method: "POST", handler: postConfirmIdea });
-http.route({ path: "/activeRound", method: "OPTIONS", handler: cors });
-http.route({ path: "/ideas", method: "OPTIONS", handler: cors });
-http.route({ path: "/proposeIdea", method: "OPTIONS", handler: cors });
-http.route({ path: "/confirmIdea", method: "OPTIONS", handler: cors });
-http.route({ path: "/orchestrate", method: "POST", handler: postOrchestrate });
-http.route({ path: "/orchestrate", method: "OPTIONS", handler: cors });
-
-// CORS preflight for all Clawarts routes
-for (const path of ["/api/clawarts/world", "/api/clawarts/round", "/api/clawarts/characters", "/api/clawarts/history", "/api/clawarts/idea", "/api/clawarts/spell", "/api/clawarts/join", "/api/clawarts/startRound", "/api/clawarts/summon", "/api/clawarts/updateCharacter", "/api/clawarts/vote", "/api/clawarts/declareWinner", "/api/clawarts/completeRound", "/api/clawarts/setPhase", "/api/clawarts/fund", "/api/clawarts/settle", "/api/clawarts/leaderboard"]) {
-  http.route({ path, method: "OPTIONS", handler: cors });
-}
+http.route({
+  path: "/api/tick/tasks",
+  method: "OPTIONS",
+  handler: handleCors,
+});
 
 export default http;
